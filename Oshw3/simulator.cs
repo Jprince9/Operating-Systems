@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
@@ -35,21 +36,20 @@ namespace Oshw3
                 }
                 else
                 {
-                    throw;
+                    Console.WriteLine("TURTLE POWER WAS TOO STRONG FOR YOUR PC!");
                 }
             }
         }
+
+
+
         //used to create the new process name
         public static string generatestring()
         {
             int length = 2;
-
-            // creating a StringBuilder object()
             StringBuilder str_build = new StringBuilder();
             Random random = new Random();
-
             char letter;
-
             for (int i = 0; i < length; i++)
             {
                 double flt = random.NextDouble();
@@ -58,7 +58,6 @@ namespace Oshw3
                 str_build.Append(letter);
             }
             return str_build.ToString();
-            System.Console.WriteLine(str_build.ToString());
         }
 
         public class Process
@@ -73,62 +72,67 @@ namespace Oshw3
             public int tempcount { get; set; } = 0;
 
         }
-        //loop to read input file and assgn each item to the list
-        static List<Process> processes = new List<Process>() {
-            new Process
-            {
-               //processname = generatestring(),
-                processname = "a",
-                arrival = 0,
-                prio = 1,
-                bursttime = 5
-            },
-            new Process
-            {
-               //processname = generatestring(),
-                processname = "b",
-                arrival = 2,
-                prio = 2,
-                bursttime = 5
-            },
 
-            new Process
+        //list or array of my processes
+        private static List<Process> processes = new List<Process>();
+
+
+        public static void classcreation(int x, int y, int z)
+        {
+            processes.Add(new Process
             {
-                processname = "c",
-               //processname = generatestring(),
-                arrival = 3,
-                prio = 1,
-                bursttime = 3
-            },
-
-            new Process
-            {
-            processname = "d",
-            //processname = generatestring(),
-            arrival = 3,
-            prio = 6,
-            bursttime = 3
-            }
-
-        };
-
+                processname = generatestring(),
+                arrival = x,
+                prio = y,
+                bursttime = z
+            });
+        }
 
 
         private static Process temp = new Process();
-        public static int numprocesses = 4;
+        public static int numprocesses;
         public static int time = 0;
         public static int maxtime = 0;
         public static int quantum = 2;
         public static int count = 0;
         public static float turnaround;
         public static int intermediate = 0;
+        public static int lines = 0;
 
         static void Main(string[] args)
         {
+            //reads the input file
+            using (StreamReader sr = new StreamReader("inputs.txt"))
+            {
+                string line;
+                //while there is another line in the file
+                while ((line = sr.ReadLine()) != null)
+                {
+                    lines += 1;
+                    //replace all spaces with commas
+                    string mynewstring = line.Replace(" ", ",");
+                    while (mynewstring.Contains(" "))
+                    {
+                        mynewstring = line.Replace(" ", ",");
+                    }
+
+                    if (lines == 1) //first line marks how many processes we have
+                    {
+                        numprocesses = Int32.Parse(mynewstring);
+                    }
+                    else // every additional line will create an object of type processes
+                    {
+                        string[] ints = mynewstring.Split(",");
+                        int x = Int32.Parse(ints[0]);
+                        int y = Int32.Parse(ints[1]);
+                        int z = Int32.Parse(ints[2]);
+                        classcreation(x, y, z);
+                    }
+                }
+            }
+
             //sorts the list based on priority
             processes.Sort((x, y) => x.prio.CompareTo(y.prio));
-
-
 
             //finds the total amount of processing time needed
             foreach (Process name in processes)
@@ -145,7 +149,7 @@ namespace Oshw3
                     if (time == name.arrival)
                     {
                         name.activated = true;
-                        Console.WriteLine($"{name.processname} has arrived at time {time}");
+                        Console.WriteLine($"{name.processname} has arrived at time {time} with priority of {name.prio}");
                     }
                 }
                 //loop through list of processes in the array
@@ -159,8 +163,6 @@ namespace Oshw3
                             processes[i].runtime++; 
                             processes[i].tempcount += 1;
                             Console.WriteLine($"Process {processes[i].processname} has run at time slot {time}");
-                            //Console.WriteLine($"Process {processes[i].processname} has been running for {processes[i].tempcount}");
-
                             for (int c = i + 1; c < numprocesses; c++)
                             {
                                 int temp = c;
@@ -170,7 +172,6 @@ namespace Oshw3
                                     temp++;
                                 }
                             }
-
                             break;
                         }
                         //process has finished
@@ -190,7 +191,6 @@ namespace Oshw3
                                 while (processes[c].prio == processes[c + 1].prio)
                                 {
                                     processes[c] = processes[c + 1];
-                                    //temp.tempcount = 0;
                                     c++;
                                 }
                                 processes[c] = temp;
@@ -204,16 +204,20 @@ namespace Oshw3
                 time++;
             }
 
+
+            //calculate turnaround time here
             for (int i = 0; i < numprocesses; i++)
             {
                 intermediate += processes[i].endtime - processes[i].arrival;
                 Console.WriteLine($"{processes[i].processname} ran for a total time of {processes[i].endtime - processes[i].arrival}");
             }
-
             turnaround = intermediate / numprocesses;
             Console.WriteLine($"turn around time is {turnaround} cycles");
 
-           // Turtle();
+            //because we had fun
+
+            //DONT FORGET TO PRESS PLAY AND ENJOY THE TURTLES
+            Turtle();
 
         }
     }
