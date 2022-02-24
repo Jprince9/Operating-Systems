@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Oshw3
@@ -21,28 +24,25 @@ namespace Oshw3
 
 
 
-        public static int numprocesses = 3;
+        public static int numprocesses = 4;
         public static int time = 0;
-        public static bool stop = false;
         public static int maxtime = 0;
         public static int quantum = 2;
-        public static int highestprio = 1000000;
-        public static string currentrunning;
-        public static int runtime;
+        public static int count = 0;
 
         //loop to read input file and assgn each item to the list
         static List<Process> processes = new List<Process>() {
             new Process
             {
-               // processname = generatestring(),
-               processname = "a",
+               //processname = generatestring(),
+                processname = "a",
                 arrival = 0,
-                prio = 3,
+                prio = 1,
                 bursttime = 5
             },
             new Process
             {
-               // processname = generatestring(),
+               //processname = generatestring(),
                 processname = "b",
                 arrival = 2,
                 prio = 2,
@@ -52,14 +52,55 @@ namespace Oshw3
             new Process
             {
                 processname = "c",
-               // processname = generatestring(),
+               //processname = generatestring(),
                 arrival = 3,
                 prio = 1,
                 bursttime = 3
+            },
+
+            new Process
+            {
+            processname = "d",
+            //processname = generatestring(),
+            arrival = 3,
+            prio = 6,
+            bursttime = 3
             }
+
         };
 
-        static Process temp = new Process();
+        private static Process temp = new Process();
+
+        public static void Turtle()
+        {
+            string url = "https://youtu.be/jQK6iUj9Uts?t=20";
+            try
+            {
+                System.Diagnostics.Process.Start(url);
+            }
+            catch
+            {
+                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    url = url.Replace("&", "^&");
+                    System.Diagnostics.Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    System.Diagnostics.Process.Start("xdg-open", url);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    System.Diagnostics.Process.Start("open", url);
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
 
         //used to create the new process name
         public static string generatestring()
@@ -86,16 +127,12 @@ namespace Oshw3
 
         static void Main(string[] args)
         {
-            Console.WriteLine($"{processes[0].processname}");
-            Console.WriteLine($"{processes[2].processname}");
-            temp = processes[0];
-            Console.WriteLine($"{temp.processname}");
-            processes[0] = processes[2];
-            processes[2] = temp;
-            Console.WriteLine($"{processes[0].processname}");
-            Console.WriteLine($"{processes[2].processname}");
+            //sorts the list based on priority
+            processes.Sort((x, y) => x.prio.CompareTo(y.prio));
 
-            //finds the amount of time needed total
+
+
+            //finds the total amount of processing time needed
             foreach (Process name in processes)
             {
                 maxtime = maxtime + name.bursttime;
@@ -104,30 +141,68 @@ namespace Oshw3
             //while there is still time remaining, continue running
             while(time != maxtime)
             {
-                //checks if process is arriving or finishing
-                foreach(Process name in processes)
+                foreach (Process name in processes)
                 {
-                    //item has entered the queue
-                    if(time == name.arrival)
+                    //process has arrived
+                    if (time == name.arrival)
                     {
                         name.activated = true;
-                        Console.WriteLine($"{name.processname} has arrived.");
-                    }
-                    //item has finished running
-                    if(name.bursttime == name.runtime)
-                    {
-                        name.activated = false;
-                        Console.WriteLine($"{name.processname} has finished.");
+                        Console.WriteLine($"{name.processname} has arrived at time {time}");
                     }
                 }
-
-                for(int i = 0; i <= numprocesses; i++)
+                //loop through list of processes in the array
+                for (int i = 0; i < numprocesses; i++)
                 {
+                    //if process is ready to run
+                    if (processes[i].activated == true)
+                    {
+                        while (processes[i].runtime != processes[i].bursttime)
+                        {
+                            processes[i].runtime++; 
+                            count += 1;
+                            Console.WriteLine($"Process {processes[i].processname} has run at time slot {time}");
+                            break;
+                        }
+                        //process has finished
+                        if (processes[i].runtime == processes[i].bursttime && processes[i].activated == true)
+                        {
+                            Console.WriteLine($"{processes[i].processname} has finished at time {time+1}");
+                            processes[i].activated = false;
+                            processes[i].endtime = time + 1; //sets the time process completed to calculate turn around
+                        }
 
+                        if (count == quantum && processes[i].prio == processes[i+1].prio) //time for round robin
+                        {
+                            temp = processes[i];
+                            int c = i;
+                            while (processes[c].prio == processes[c + 1].prio)
+                            {
+                                processes[c] = processes[c + 1];
+                                c++;
+                            }
+                            processes[c]=temp;
+                        }
+
+
+                        break;
+                    }
                 }
-
-
+                time++;
             }
+            float turnaround;
+            int intermediate = 0;
+
+            for (int i = 0; i < numprocesses; i++)
+            {
+                intermediate += processes[i].endtime - processes[i].arrival;
+                Console.WriteLine($"{processes[i].processname} ran for a total time of {processes[i].endtime - processes[i].arrival}");
+            }
+
+            turnaround = intermediate / numprocesses;
+            Console.WriteLine($"turn around time is {turnaround} cycles");
+
+           // Turtle();
+
         }
     }
 }
