@@ -1,0 +1,6 @@
+Using visual studio 2022, open the Oshw3.sln
+
+ensure Oshw3/bin/Debug/net5.0  contains the "inputs" text document
+
+if inputs document is missing, create a new one or move the supplied inputs file.
+
